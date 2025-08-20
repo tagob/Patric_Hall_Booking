@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Building2, Calendar, LogOut, User, LayoutDashboard } from 'lucide-react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { Building2, LogOut, LayoutDashboard, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Toast } from './Toast';
 import { useToast } from '../hooks/useToast';
@@ -8,17 +8,23 @@ import { useToast } from '../hooks/useToast';
 export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast, hideToast } = useToast();
 
-  const handleVenuesClick = () => {
-    navigate('/venues');
-  };
+  React.useEffect(() => {
+    if (user) {
+      // Redirect based on role
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'hod') {
+        navigate('/hod');
+      }
+    }
+  }, [user, navigate]);
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -29,29 +35,27 @@ export function Layout() {
       <nav className="bg-indigo-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <Building2 className="h-8 w-8" />
               <span className="font-bold text-xl">Patrician Halls</span>
-            </Link>
+            </div>
             <div className="flex items-center space-x-4">
-              <button 
-                onClick={handleVenuesClick}
-                className="flex items-center space-x-1 hover:text-indigo-200 text-white transition-colors duration-200"
-              >
-                <Building2 className="h-5 w-5" />
-                <span>Multiple Venues</span>
-              </button>
               {user ? (
                 <>
-                  <Link to="/bookings" className="flex items-center space-x-1 hover:text-indigo-200">
-                    <Calendar className="h-5 w-5" />
-                    <span>My Bookings</span>
-                  </Link>
+                  <span className="text-indigo-200">
+                    {user.name} ({user.role.toUpperCase()})
+                  </span>
                   {user.role === 'admin' && (
-                    <Link to="/admin" className="flex items-center space-x-1 hover:text-indigo-200">
+                    <div className="flex items-center space-x-1 text-indigo-200">
                       <LayoutDashboard className="h-5 w-5" />
-                      <span>Admin</span>
-                    </Link>
+                      <span>Admin Dashboard</span>
+                    </div>
+                  )}
+                  {user.role === 'hod' && (
+                    <div className="flex items-center space-x-1 text-indigo-200">
+                      <Calendar className="h-5 w-5" />
+                      <span>HOD Dashboard</span>
+                    </div>
                   )}
                   <button 
                     onClick={handleLogout}
@@ -61,16 +65,6 @@ export function Layout() {
                     <span>Logout</span>
                   </button>
                 </>
-              ) : (
-                location.pathname !== '/login' && (
-                  <Link 
-                    to="/login" 
-                    className="flex items-center space-x-1 hover:text-indigo-200"
-                  >
-                    <User className="h-5 w-5" />
-                    <span>Login</span>
-                  </Link>
-                )
               )}
             </div>
           </div>
